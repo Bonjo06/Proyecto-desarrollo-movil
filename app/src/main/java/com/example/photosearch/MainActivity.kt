@@ -1,7 +1,9 @@
 package com.example.photosearch
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -26,12 +28,13 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.example.photosearch.ui.theme.PhotoSearchTheme
 import com.example.photosearch.viewmodel.MainViewModel
+import java.net.URLEncoder
+
+
 
 class MainActivity : ComponentActivity() {
-    // 1. Obtenemos la instancia del ViewModel, igual que antes.
     private val mainViewModel: MainViewModel by viewModels()
 
-    // 2. Preparamos el lanzador para solicitar permisos.
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
             if (isGranted) {
@@ -44,57 +47,55 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Verificamos y solicitamos el permiso al crear la actividad.
         checkAndRequestLocationPermission()
 
         setContent {
             PhotoSearchTheme {
-                // Surface es un contenedor básico en Compose.
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    // 3. Llamamos a nuestra pantalla principal, pasándole el ViewModel.
                     MainScreen(viewModel = mainViewModel)
                 }
             }
         }
     }
-
     private fun checkAndRequestLocationPermission() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
     }
 }
-
 @Composable
 fun MainScreen(viewModel: MainViewModel) {
-    // 4. Observamos el LiveData del ViewModel y lo convertimos en un "Estado" de Compose.
-    //    Cada vez que el LiveData cambie, la UI se "recompondrá" (redibujará) automáticamente.
     val result by viewModel.photoResult.observeAsState()
     val context = LocalContext.current
 
-    // LaunchedEffect se usa para ejecutar código que no es parte de la UI (como mostrar un Toast)
-    // cuando un estado cambia. Se ejecutará cada vez que 'result' tenga un nuevo valor.
     LaunchedEffect(result) {
-        result?.let {
-            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+        result?.let { address ->
+            if (address.contains("Ubicación desconocida") || address.contains("No se pudo obtener")) {
+                Toast.makeText(context, address, Toast.LENGTH_LONG).show()
+            } else {
+                val encodedAddr = URLEncoder.encode(address, "UTF-8")
+                val gmmIntentUri = Uri.parse("geo:0,0?q=$encodedAddr")
+                val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+                mapIntent.setPackage("com.google.android.apps.maps")
+                context.startActivity(mapIntent)
+            }
         }
     }
 
-    // Box es un layout que permite apilar elementos.
     Box(
         modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center // Centramos el contenido.
+        contentAlignment = Alignment.Center
     ) {
         Button(
-            // 5. En el onClick, simplemente llamamos a la función del ViewModel.
-            //    La UI no sabe qué pasa, solo notifica la acción.
-            onClick = { viewModel.onPhotoButtonPressed("Objeto desde Compose") },
+            onClick = {
+                viewModel.onPhotoButtonPressed()
+            },
             modifier = Modifier.padding(16.dp)
         ) {
-            Text(text = "Tomar Foto y Obtener Ubicación")
+            Text(text = "Obtener Ubicación y Abrir en Maps")
         }
     }
 }
