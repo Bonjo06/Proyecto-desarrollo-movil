@@ -2,99 +2,135 @@ package com.example.photosearch
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.Preview
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.example.photosearch.ui.theme.PhotoSearchTheme
 import com.example.photosearch.viewmodel.MainViewModel
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.*
 
 class MainActivity : ComponentActivity() {
-    // 1. Obtenemos la instancia del ViewModel, igual que antes.
     private val mainViewModel: MainViewModel by viewModels()
 
-    // 2. Preparamos el lanzador para solicitar permisos.
-    private val requestPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
-            if (isGranted) {
-                Toast.makeText(this, "Permiso de ubicación concedido", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(this, "El permiso de ubicación es necesario.", Toast.LENGTH_LONG).show()
+    private val requestPermissionsLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+            val granted = permissions[Manifest.permission.CAMERA] == true &&
+                    permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true
+            if (!granted) {
+                Toast.makeText(this, "Se necesitan permisos de cámara y ubicación", Toast.LENGTH_LONG).show()
             }
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Verificamos y solicitamos el permiso al crear la actividad.
-        checkAndRequestLocationPermission()
+        requestPermissionsLauncher.launch(
+            arrayOf(Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION)
+        )
 
         setContent {
             PhotoSearchTheme {
-                // Surface es un contenedor básico en Compose.
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    // 3. Llamamos a nuestra pantalla principal, pasándole el ViewModel.
-                    MainScreen(viewModel = mainViewModel)
+                    CameraScreen(viewModel = mainViewModel)
                 }
             }
-        }
-    }
-
-    private fun checkAndRequestLocationPermission() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
     }
 }
 
 @Composable
-fun MainScreen(viewModel: MainViewModel) {
-    // 4. Observamos el LiveData del ViewModel y lo convertimos en un "Estado" de Compose.
-    //    Cada vez que el LiveData cambie, la UI se "recompondrá" (redibujará) automáticamente.
-    val result by viewModel.photoResult.observeAsState()
+fun CameraScreen(viewModel: MainViewModel) {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var imageCapture: ImageCapture? = remember { null }
 
-    // LaunchedEffect se usa para ejecutar código que no es parte de la UI (como mostrar un Toast)
-    // cuando un estado cambia. Se ejecutará cada vez que 'result' tenga un nuevo valor.
-    LaunchedEffect(result) {
-        result?.let {
-            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
-        }
-    }
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Vista previa de la cámara
+        AndroidView(
+            modifier = Modifier.fillMaxSize(),
+            factory = { ctx ->
+                val previewView = PreviewView(ctx)
+                val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
 
-    // Box es un layout que permite apilar elementos.
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center // Centramos el contenido.
-    ) {
+                cameraProviderFuture.addListener({
+                    val cameraProvider = cameraProviderFuture.get()
+                    val preview = Preview.Builder().build().also {
+                        it.setSurfaceProvider(previewView.surfaceProvider)
+                    }
+                    imageCapture = ImageCapture.Builder().build()
+
+                    try {
+                        cameraProvider.unbindAll()
+                        cameraProvider.bindToLifecycle(
+                            lifecycleOwner,
+                            CameraSelector.DEFAULT_BACK_CAMERA,
+                            preview,
+                            imageCapture
+                        )
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }, ContextCompat.getMainExecutor(ctx))
+                previewView
+            }
+        )
+
+        // Botón para tomar foto
         Button(
-            // 5. En el onClick, simplemente llamamos a la función del ViewModel.
-            //    La UI no sabe qué pasa, solo notifica la acción.
-            onClick = { viewModel.onPhotoButtonPressed("Objeto desde Compose") },
-            modifier = Modifier.padding(16.dp)
+            onClick = {
+                val photoFile = File(
+                    context.externalCacheDir,
+                    SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date()) + ".jpg"
+                )
+                val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
+
+                imageCapture?.takePicture(
+                    outputOptions,
+                    ContextCompat.getMainExecutor(context),
+                    object : ImageCapture.OnImageSavedCallback {
+                        override fun onError(exc: ImageCaptureException) {
+                            Toast.makeText(context, "Error al guardar foto: ${exc.message}", Toast.LENGTH_SHORT).show()
+                        }
+
+                        override fun onImageSaved(output: ImageCapture.OutputFileResults) {
+                            Toast.makeText(context, "Foto guardada: ${photoFile.name}", Toast.LENGTH_SHORT).show()
+                            val uri = Uri.fromFile(photoFile)
+                            // Aquí podrías enviar la foto al ViewModel o analizarla con ML Kit
+                        }
+                    }
+                )
+            },
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(24.dp)
         ) {
-            Text(text = "Tomar Foto y Obtener Ubicación")
+            Text("Tomar Foto")
         }
     }
 }
+
