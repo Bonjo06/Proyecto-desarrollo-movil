@@ -3,37 +3,69 @@ package com.example.photosearch.repository
 import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Geocoder
-import com.google.android.gms.location.LocationServices
-import kotlinx.coroutines.tasks.await
+import android.os.Build
+import android.util.Log
+import com.example.photosearch.data.PhotoDatabase
+import com.example.photosearch.data.PhotoEntity
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
+import kotlin.coroutines.resume
 
-class PhotoRepository(private val context: Context){
 
-    private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+class PhotoRepository(private val context: Context) {
 
-    @SuppressLint("MissingPermission") // El permiso se verificará en la Activity/View
-    suspend fun getCurrentAddress(): String {
-        return try {
-            // 1. Obtener coordenadas
-            val location = fusedLocationClient.lastLocation.await()
-                ?: return "Ubicación desconocida (null)"
+    private val photoDao = PhotoDatabase.getDatabase(context).photoDao()
 
-            // 2. Convertir a dirección
-            // RN-02 y RN-04: Depende de internet y es una aproximación.
-            if (!Geocoder.isPresent()) return "Servicio Geocoder no disponible"
+    @SuppressLint("MissingPermission")
+    suspend fun getCurrentAddress(): String = withContext(Dispatchers.IO) {
+        try {
+            val location = LocationHelper.getLastKnownLocation(context)
+                ?: return@withContext "No se pudo obtener la ubicación actual."
+
             val geocoder = Geocoder(context, Locale.getDefault())
 
-            val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
-
-            if (addresses != null && addresses.isNotEmpty()) {
-                addresses[0].getAddressLine(0) ?: "Dirección no encontrada"
+            // ✅ Usa el nuevo método asíncrono si Android >= 13
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                suspendCancellableCoroutine { cont ->
+                    geocoder.getFromLocation(location.latitude, location.longitude, 1) { addresses ->
+                        val result = if (addresses.isNotEmpty()) {
+                            addresses[0].getAddressLine(0) ?: "Dirección no encontrada"
+                        } else {
+                            "No se encontró una dirección válida."
+                        }
+                        cont.resume(result)
+                    }
+                }
             } else {
-                "Dirección no encontrada"
+                val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
+                if (!addresses.isNullOrEmpty()) {
+                    addresses[0].getAddressLine(0) ?: "Dirección no encontrada"
+                } else {
+                    "No se encontró una dirección válida."
+                }
             }
+        } catch (e: SecurityException) {
+            Log.e("PhotoRepository", "Error de permisos", e)
+            "Permiso de ubicación denegado."
         } catch (e: Exception) {
-            // Manejo de error si no hay internet o el servicio falla
-            "No se pudo obtener la dirección. Verifica tu conexión."
+            Log.e("PhotoRepository", "Error obteniendo dirección", e)
+            "Error obteniendo la dirección. Verifica tu conexión a Internet."
         }
     }
 
+    suspend fun savePhoto(label: String, address: String, imagePath: String) {
+        withContext(Dispatchers.IO) {
+            val date = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
+            val photo = PhotoEntity(label = label, address = address, date = date, imagePath = imagePath)
+            photoDao.insert(photo)
+        }
+    }
+
+    suspend fun getAllPhotos(): List<PhotoEntity> = withContext(Dispatchers.IO) {
+        photoDao.getAll()
+    }
 }

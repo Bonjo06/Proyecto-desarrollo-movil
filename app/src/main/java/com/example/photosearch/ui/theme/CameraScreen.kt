@@ -1,42 +1,34 @@
 package com.example.photosearch.ui.theme
 
-import android.Manifest
 import android.content.Context
-import android.graphics.Rect
 import android.util.Log
 import android.view.ViewGroup
 import androidx.annotation.OptIn
-import androidx.camera.core.*
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.ExperimentalGetImage
+import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
 import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.objects.DetectedObject
-import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
 import com.google.mlkit.vision.objects.ObjectDetection
-import java.io.File
-import java.util.concurrent.ExecutorService
+import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
 import java.util.concurrent.Executors
 
 @Composable
-fun CameraScreen(
-    onObjectDetected: (String) -> Unit
-) {
+fun CameraScreen(onObjectDetected: (String) -> Unit) {
     val context = LocalContext.current
     val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
     val imageCapture = remember { ImageCapture.Builder().build() }
 
-    CameraPreview(
-        context = context,
-        imageCapture = imageCapture,
-        cameraExecutor = cameraExecutor,
-        onObjectDetected = onObjectDetected
-    )
+    CameraPreview(context, imageCapture, cameraExecutor, onObjectDetected)
 }
 
 @OptIn(ExperimentalGetImage::class)
@@ -44,7 +36,7 @@ fun CameraScreen(
 fun CameraPreview(
     context: Context,
     imageCapture: ImageCapture,
-    cameraExecutor: ExecutorService,
+    cameraExecutor: java.util.concurrent.ExecutorService,
     onObjectDetected: (String) -> Unit
 ) {
     val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
