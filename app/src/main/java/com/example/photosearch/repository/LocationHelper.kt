@@ -19,3 +19,4 @@ object LocationHelper {
         return locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
     }
 }
+

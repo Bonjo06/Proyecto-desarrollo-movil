@@ -1,107 +1,98 @@
 package com.example.photosearch.ui.theme
 
-import android.content.Context
 import android.util.Log
 import android.view.ViewGroup
-import androidx.annotation.OptIn
 import androidx.camera.core.CameraSelector
-import androidx.camera.core.ExperimentalGetImage
-import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.objects.ObjectDetection
-import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
-import java.util.concurrent.Executors
+import androidx.core.content.ContextCompat
 
 @Composable
-fun CameraScreen(onObjectDetected: (String) -> Unit) {
-    val context = LocalContext.current
-    val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
-    val imageCapture = remember { ImageCapture.Builder().build() }
-
-    CameraPreview(context, imageCapture, cameraExecutor, onObjectDetected)
-}
-
-@OptIn(ExperimentalGetImage::class)
-@Composable
-fun CameraPreview(
-    context: Context,
-    imageCapture: ImageCapture,
-    cameraExecutor: java.util.concurrent.ExecutorService,
-    onObjectDetected: (String) -> Unit
+fun CameraScreen(
+    onCapture: (String) -> Unit, // acción para detección o captura
+    onPickImage: () -> Unit      // acción para abrir galería
 ) {
-    val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
+    val context = LocalContext.current
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
 
-    AndroidView(
-        modifier = Modifier.fillMaxSize(),
-        factory = { ctx ->
-            val previewView = PreviewView(ctx).apply {
-                layoutParams = ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT
-                )
-            }
+    Box(modifier = Modifier.fillMaxSize()) {
 
-            val preview = Preview.Builder().build().also {
-                it.setSurfaceProvider(previewView.surfaceProvider)
-            }
-
-            val imageAnalyzer = ImageAnalysis.Builder().build().also { analysis ->
-                val options = ObjectDetectorOptions.Builder()
-                    .setDetectorMode(ObjectDetectorOptions.STREAM_MODE)
-                    .enableMultipleObjects()
-                    .enableClassification()
-                    .build()
-
-                val objectDetector = ObjectDetection.getClient(options)
-
-                analysis.setAnalyzer(cameraExecutor) { imageProxy ->
-                    val rotation = imageProxy.imageInfo.rotationDegrees
-                    val mediaImage = imageProxy.image
-                    if (mediaImage != null) {
-                        val inputImage = InputImage.fromMediaImage(mediaImage, rotation)
-                        objectDetector.process(inputImage)
-                            .addOnSuccessListener { results ->
-                                for (obj in results) {
-                                    val label = obj.labels.firstOrNull()?.text ?: "Objeto"
-                                    onObjectDetected(label)
-                                    Log.d("PhotoSearch", "Detectado: $label")
-                                }
-                            }
-                            .addOnFailureListener {
-                                Log.e("PhotoSearch", "Error en detección", it)
-                            }
-                            .addOnCompleteListener { imageProxy.close() }
-                    } else {
-                        imageProxy.close()
-                    }
+        // ✅ Vista previa de la cámara
+        AndroidView(
+            factory = { ctx ->
+                val previewView = PreviewView(ctx).apply {
+                    layoutParams = ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
                 }
+
+                val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
+                cameraProviderFuture.addListener({
+                    try {
+                        val cameraProvider = cameraProviderFuture.get()
+                        val preview = Preview.Builder().build().also {
+                            it.setSurfaceProvider(previewView.surfaceProvider)
+                        }
+
+                        val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+
+                        cameraProvider.unbindAll()
+                        cameraProvider.bindToLifecycle(
+                            lifecycleOwner,
+                            cameraSelector,
+                            preview
+                        )
+                    } catch (e: Exception) {
+                        Log.e("CameraScreen", "Error al iniciar cámara: ${e.message}")
+                    }
+                }, ContextCompat.getMainExecutor(ctx))
+
+                previewView
+            },
+            modifier = Modifier.fillMaxSize()
+        )
+
+        // 🔹 Botones inferiores
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            FloatingActionButton(
+                onClick = { onCapture("Objeto detectado") },
+                containerColor = MaterialTheme.colorScheme.primary
+            ) {
+                Icon(Icons.Default.CameraAlt, contentDescription = "Capturar")
             }
 
-            try {
-                val cameraProvider = cameraProviderFuture.get()
-                cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(
-                    ctx as androidx.lifecycle.LifecycleOwner,
-                    CameraSelector.DEFAULT_BACK_CAMERA,
-                    preview,
-                    imageAnalyzer,
-                    imageCapture
-                )
-            } catch (e: Exception) {
-                Log.e("PhotoSearch", "Error iniciando cámara", e)
+            FloatingActionButton(
+                onClick = onPickImage,
+                containerColor = MaterialTheme.colorScheme.secondary
+            ) {
+                Icon(Icons.Default.Image, contentDescription = "Seleccionar imagen")
             }
-
-            previewView
         }
-    )
+    }
 }

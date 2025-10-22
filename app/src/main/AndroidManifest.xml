@@ -9,6 +9,9 @@
     <!-- Permiso para guardar imágenes (solo si guardas fotos en almacenamiento externo) -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="29" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+
 
     <!-- Requerir cámara -->
     <uses-feature android:name="android.hardware.camera.any" android:required="true" />

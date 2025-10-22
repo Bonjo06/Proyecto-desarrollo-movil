@@ -17,8 +17,10 @@ import com.example.photosearch.ui.theme.PhotoSearchTheme
 import com.example.photosearch.viewmodel.MainViewModel
 
 class MainActivity : ComponentActivity() {
+
     private val mainViewModel: MainViewModel by viewModels()
 
+    // 🔹 Lanzador para pedir permisos de cámara y ubicación
     private val requestPermissionsLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
             val granted = permissions[Manifest.permission.CAMERA] == true &&
@@ -28,12 +30,27 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+    // 🔹 Lanzador para seleccionar una imagen desde la galería
+    private val pickImageLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            mainViewModel.onPhotoButtonPressed("Imagen seleccionada", it.toString())
+            Toast.makeText(this, "Imagen seleccionada y guardada", Toast.LENGTH_SHORT).show()
+        } ?: run {
+            Toast.makeText(this, "No se seleccionó ninguna imagen", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 🔹 Pedir permisos al iniciar
+        // 🔹 Solicitar permisos al iniciar
         requestPermissionsLauncher.launch(
-            arrayOf(Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION)
+            arrayOf(
+                Manifest.permission.CAMERA,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            )
         )
 
         setContent {
@@ -43,11 +60,17 @@ class MainActivity : ComponentActivity() {
 
                 Surface(modifier = Modifier, color = MaterialTheme.colorScheme.background) {
                     when (currentScreen) {
-                        "camera" -> CameraScreen { detectedLabel ->
-                            mainViewModel.onPhotoButtonPressed(detectedLabel)
-                            Toast.makeText(context, "Detectado: $detectedLabel", Toast.LENGTH_SHORT).show()
-                            currentScreen = "history" // Cambia a historial tras guardar
-                        }
+                        "camera" -> CameraScreen(
+                            onCapture = { detectedLabel ->
+                                mainViewModel.onPhotoButtonPressed(detectedLabel)
+                                Toast.makeText(context, "Detectado: $detectedLabel", Toast.LENGTH_SHORT).show()
+                                currentScreen = "history"
+                            },
+                            onPickImage = {
+                                // 🔹 Abre la galería
+                                pickImageLauncher.launch("image/*")
+                            }
+                        )
 
                         "history" -> HistoryScreen(
                             photoList = mainViewModel.photoList.collectAsState().value,
