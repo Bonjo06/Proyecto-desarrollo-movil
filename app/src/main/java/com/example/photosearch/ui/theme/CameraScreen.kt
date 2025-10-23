@@ -1,20 +1,14 @@
 package com.example.photosearch.ui.theme
 
+import android.net.Uri
 import android.util.Log
 import android.view.ViewGroup
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.Preview
+import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -25,16 +19,29 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.objects.ObjectDetection
+import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
+import java.io.File
 
 @Composable
 fun CameraScreen(
-    onCapture: (String) -> Unit, // acción para detección o captura
-    onPickImage: () -> Unit      // acción para abrir galería
+    onCapture: (String, String) -> Unit, // acción al capturar una foto
+    onPickImage: () -> Unit
 ) {
     val context = LocalContext.current
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
 
     Box(modifier = Modifier.fillMaxSize()) {
+
+        val imageCapture = ImageCapture.Builder().build()
+
+        val options = ObjectDetectorOptions.Builder()
+            .setDetectorMode(ObjectDetectorOptions.SINGLE_IMAGE_MODE)
+            .enableMultipleObjects()
+            .enableClassification()
+            .build()
+        val objectDetector = ObjectDetection.getClient(options)
 
         // ✅ Vista previa de la cámara
         AndroidView(
@@ -55,15 +62,15 @@ fun CameraScreen(
                         }
 
                         val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-
                         cameraProvider.unbindAll()
                         cameraProvider.bindToLifecycle(
                             lifecycleOwner,
                             cameraSelector,
-                            preview
+                            preview,
+                            imageCapture
                         )
                     } catch (e: Exception) {
-                        Log.e("CameraScreen", "Error al iniciar cámara: ${e.message}")
+                        Log.e("CameraScreen", "Error al iniciar cámara", e)
                     }
                 }, ContextCompat.getMainExecutor(ctx))
 
@@ -72,27 +79,58 @@ fun CameraScreen(
             modifier = Modifier.fillMaxSize()
         )
 
-        // 🔹 Botones inferiores
+        // 🔹 Solo un botón de cámara centrado
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)
                 .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
+            horizontalArrangement = Arrangement.Center
         ) {
             FloatingActionButton(
-                onClick = { onCapture("Objeto detectado") },
+                onClick = {
+                    try {
+                        val photoFile = File(
+                            context.externalCacheDir,
+                            "photo_${System.currentTimeMillis()}.jpg"
+                        )
+                        val outputOptions =
+                            ImageCapture.OutputFileOptions.Builder(photoFile).build()
+
+                        imageCapture.takePicture(
+                            outputOptions,
+                            ContextCompat.getMainExecutor(context),
+                            object : ImageCapture.OnImageSavedCallback {
+                                override fun onError(exc: ImageCaptureException) {
+                                    Log.e("Camera", "Error al guardar imagen", exc)
+                                }
+
+                                override fun onImageSaved(output: ImageCapture.OutputFileResults) {
+                                    val imagePath = photoFile.absolutePath
+                                    val imageUri = Uri.fromFile(photoFile)
+                                    val image = InputImage.fromFilePath(context, imageUri)
+
+                                    // Detección y guardado
+                                    objectDetector.process(image)
+                                        .addOnSuccessListener {
+                                            onCapture("Objeto detectado", imagePath)
+                                        }
+                                        .addOnFailureListener { e ->
+                                            Log.e("MLKit", "Error en detección: ${e.message}")
+                                            onCapture("Objeto detectado", imagePath)
+                                        }
+                                }
+                            }
+                        )
+                    } catch (e: Exception) {
+                        Log.e("CameraScreen", "Error al capturar imagen: ${e.message}")
+                    }
+                },
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
                 Icon(Icons.Default.CameraAlt, contentDescription = "Capturar")
             }
-
-            FloatingActionButton(
-                onClick = onPickImage,
-                containerColor = MaterialTheme.colorScheme.secondary
-            ) {
-                Icon(Icons.Default.Image, contentDescription = "Seleccionar imagen")
-            }
         }
     }
 }
+
