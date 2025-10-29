@@ -43,6 +43,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // 🟢 Solicita permisos al iniciar
         requestPermissionsLauncher.launch(
             arrayOf(
                 Manifest.permission.CAMERA,
@@ -66,6 +67,7 @@ class MainActivity : ComponentActivity() {
                     currentScreen = if (existingUser == null) "register" else "home"
                 }
 
+                // 🧭 Navegación entre pantallas
                 if (currentScreen == null) {
                     Surface(modifier = Modifier, color = MaterialTheme.colorScheme.background) {
                         Text("Cargando...")
@@ -73,6 +75,8 @@ class MainActivity : ComponentActivity() {
                 } else {
                     Surface(modifier = Modifier, color = MaterialTheme.colorScheme.background) {
                         when (currentScreen) {
+
+                            // 🧾 Pantalla de registro
                             "register" -> RegisterScreen(
                                 onRegisterDone = {
                                     Toast.makeText(context, "Usuario registrado ✅", Toast.LENGTH_SHORT).show()
@@ -83,11 +87,12 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
 
+                            // 🏠 Pantalla principal (Home)
                             "home" -> loggedUser?.let { user ->
                                 HomeScreen(
                                     user = user,
                                     onOpenCamera = { currentScreen = "camera" },
-                                    onOpenHistory = { currentScreen = "history" }, // 🔹 Nueva acción
+                                    onOpenHistory = { currentScreen = "history" },
                                     onLogout = {
                                         coroutineScope.launch {
                                             context.deleteDatabase("photo_db")
@@ -99,7 +104,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-
+                            // 📷 Pantalla de cámara (con botón de volver)
                             "camera" -> CameraScreen(
                                 onCapture = { detectedLabel, imagePath ->
                                     mainViewModel.onPhotoButtonPressed(detectedLabel, imagePath)
@@ -108,9 +113,11 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onPickImage = {
                                     pickImageLauncher.launch("image/*")
-                                }
+                                },
+                                onBack = { currentScreen = "home" } // 🔙 Botón de volver
                             )
 
+                            // 🖼️ Historial de fotos detectadas
                             "history" -> HistoryScreen(
                                 photoList = mainViewModel.photoList.collectAsState().value,
                                 onBack = { currentScreen = "home" }
