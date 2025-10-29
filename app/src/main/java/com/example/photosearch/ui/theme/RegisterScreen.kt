@@ -26,6 +26,10 @@ fun RegisterScreen(onRegisterDone: () -> Unit) {
     var email by remember { mutableStateOf(TextFieldValue("")) }
     var showWelcome by remember { mutableStateOf(false) }
 
+    // ⚠️ Variables para manejar errores
+    var nameError by remember { mutableStateOf<String?>(null) }
+    var emailError by remember { mutableStateOf<String?>(null) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -33,48 +37,65 @@ fun RegisterScreen(onRegisterDone: () -> Unit) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // 🧾 Título normal si no hay animación activa
         if (!showWelcome) {
             Text("Registro de Usuario", style = MaterialTheme.typography.headlineMedium)
             Spacer(modifier = Modifier.height(16.dp))
 
+            // 🧾 Campo nombre completo con validación
             OutlinedTextField(
                 value = name,
-                onValueChange = { name = it },
+                onValueChange = {
+                    name = it
+                    nameError = null // limpiar error al escribir
+                },
                 label = { Text("Nombre completo") },
+                isError = nameError != null,
+                supportingText = {
+                    nameError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                },
                 modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            // ✉️ Campo correo electrónico con validación
             OutlinedTextField(
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = {
+                    email = it
+                    emailError = null // limpiar error al escribir
+                },
                 label = { Text("Correo electrónico") },
+                isError = emailError != null,
+                supportingText = {
+                    emailError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                },
                 modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(modifier = Modifier.height(20.dp))
 
+            // 🔘 Botón registrar
             Button(
                 onClick = {
                     scope.launch {
-                        if (name.text.isNotBlank() && email.text.isNotBlank()) {
-                            userRepo.registerUser(name.text, email.text)
-                            Toast.makeText(
-                                context,
-                                "Usuario registrado correctamente ✅",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            showWelcome = true
-                            delay(2000) // ⏱️ Espera 2 segundos antes de pasar al menú
-                            onRegisterDone()
-                        } else {
-                            Toast.makeText(
-                                context,
-                                "Por favor completa todos los campos",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                        val nombreValido = name.text.trim().split(" ").size >= 2
+                        val correoValido = email.text.matches(Regex("^[A-Za-z0-9+_.-]+@(gmail\\.com|duocuc\\.cl)$"))
+
+                        when {
+                            !nombreValido -> nameError = "Debe ingresar nombre y apellido"
+                            !correoValido -> emailError = "Debe usar un correo válido (@gmail.com o @duocuc.cl)"
+                            else -> {
+                                userRepo.registerUser(name.text, email.text)
+                                Toast.makeText(
+                                    context,
+                                    "Usuario registrado correctamente ✅",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                showWelcome = true
+                                delay(2000)
+                                onRegisterDone()
+                            }
                         }
                     }
                 },
@@ -91,19 +112,13 @@ fun RegisterScreen(onRegisterDone: () -> Unit) {
             enter = fadeIn(),
             exit = fadeOut()
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "🎉 Bienvenido, ${name.text} 👋",
-                    style = MaterialTheme.typography.headlineMedium
-                )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("🎉 Bienvenido, ${name.text} 👋", style = MaterialTheme.typography.headlineMedium)
                 Spacer(modifier = Modifier.height(10.dp))
-                Text(
-                    text = "Preparando tu experiencia...",
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                Text("Preparando tu experiencia...", style = MaterialTheme.typography.bodyMedium)
             }
         }
     }
 }
+
+

@@ -8,10 +8,9 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,8 +25,9 @@ import java.io.File
 
 @Composable
 fun CameraScreen(
-    onCapture: (String, String) -> Unit, // acción al capturar una foto
-    onPickImage: () -> Unit
+    onCapture: (String, String) -> Unit,
+    onPickImage: () -> Unit,
+    onBack: () -> Unit // ✅ Nuevo parámetro para volver atrás
 ) {
     val context = LocalContext.current
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
@@ -79,14 +79,23 @@ fun CameraScreen(
             modifier = Modifier.fillMaxSize()
         )
 
-        // 🔹 Solo un botón de cámara centrado
+        // 🔹 Fila inferior con los dos botones
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)
                 .padding(16.dp),
-            horizontalArrangement = Arrangement.Center
+            horizontalArrangement = Arrangement.SpaceEvenly
         ) {
+            // 🔙 Botón para volver atrás
+            FloatingActionButton(
+                onClick = { onBack() },
+                containerColor = MaterialTheme.colorScheme.secondary
+            ) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+            }
+
+            // 📸 Botón para tomar la foto
             FloatingActionButton(
                 onClick = {
                     try {
@@ -110,7 +119,6 @@ fun CameraScreen(
                                     val imageUri = Uri.fromFile(photoFile)
                                     val image = InputImage.fromFilePath(context, imageUri)
 
-                                    // Detección y guardado
                                     objectDetector.process(image)
                                         .addOnSuccessListener {
                                             onCapture("Objeto detectado", imagePath)
@@ -133,4 +141,3 @@ fun CameraScreen(
         }
     }
 }
-
