@@ -9,6 +9,7 @@ import com.example.photosearch.repository.PhotoRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import java.net.URLEncoder
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
