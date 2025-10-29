@@ -31,18 +31,19 @@ El sistema cuenta con un flujo completo de registro, almacenamiento local, histo
 
 ## 🧠 Funcionalidades Implementadas
 
-| Funcionalidad y Descripción |
-
-| 🧾 **Registro validado** Verifica que el usuario ingrese nombre y apellido, y un correo válido (`@gmail.com` o `@duocuc.cl`). |
-| 🏠 **Pantalla principal (Home)** Permite acceder a la cámara o al historial. |
-| 📷 **Captura de fotos (CameraX)** Usa la cámara nativa del dispositivo para tomar fotos. |
-| 🤖 **Detección de objetos (ML Kit)** Identifica objetos automáticamente en la imagen capturada. |
-| 🌍 **Ubicación GPS** Registra la dirección física donde se tomó la foto. |
-| 🖼️ **Historial de detecciones** Muestra las fotos guardadas, con su dirección, fecha y descripción. |
+| Funcionalidad | Descripción |
+|----------------|-------------|
+| 🧾 **Registro validado** | Verifica que el usuario ingrese nombre y apellido, y un correo válido (`@gmail.com` o `@duocuc.cl`). |
+| 🏠 **Pantalla principal (Home)** | Permite acceder a la cámara o al historial. |
+| 📷 **Captura de fotos (CameraX)** | Usa la cámara nativa del dispositivo para tomar fotos. |
+| 🤖 **Detección de objetos (ML Kit)** | Identifica objetos automáticamente en la imagen capturada. |
+| 🌍 **Ubicación GPS** | Registra la dirección física donde se tomó la foto. |
+| 🖼️ **Historial de detecciones** | Muestra las fotos guardadas, con su dirección, fecha y descripción. |
 | 💾 **Base de datos local (Room)** | Guarda usuarios y fotos en una base SQLite local. |
-| ✨ **Diseño moderno (Material 3)**  Interfaz visual limpia, adaptada a temas claros y oscuros. |
-| 🔙 **Botón de volver**  Permite regresar fácilmente desde la cámara a la pantalla principal. |
+| ✨ **Diseño moderno (Material 3)** | Interfaz visual limpia, adaptada a temas claros y oscuros. |
+| 🔙 **Botón de volver** | Permite regresar fácilmente desde la cámara a la pantalla principal. |
 
+---
 ---
 
 ## 🚀 Pasos para Ejecutar el Proyecto
