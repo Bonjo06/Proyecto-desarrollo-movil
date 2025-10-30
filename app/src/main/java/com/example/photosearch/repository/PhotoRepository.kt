@@ -28,7 +28,6 @@ class PhotoRepository(private val context: Context) {
 
             val geocoder = Geocoder(context, Locale.getDefault())
 
-            // ✅ Usa el nuevo método asíncrono si Android >= 13
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 suspendCancellableCoroutine { cont ->
                     geocoder.getFromLocation(location.latitude, location.longitude, 1) { addresses ->
