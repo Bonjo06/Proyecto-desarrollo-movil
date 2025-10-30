@@ -35,7 +35,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val address = repository.getCurrentAddress()
 
-            // Solo guarda si hay un label válido
             if (label.isNotBlank()) {
                 repository.savePhoto(label, address, imagePath)
                 Log.d("MainViewModel", "✅ Foto guardada: $label")
