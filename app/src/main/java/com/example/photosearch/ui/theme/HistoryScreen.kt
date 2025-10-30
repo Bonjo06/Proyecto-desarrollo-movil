@@ -63,7 +63,6 @@ fun HistoryScreen(photoList: List<PhotoEntity>, onBack: () -> Unit) {
                         Text("Fecha: ${photo.date}", style = MaterialTheme.typography.bodySmall)
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        // 🌍 Botón para abrir ubicación en Google Maps
                         Button(
                             onClick = {
                                 try {
