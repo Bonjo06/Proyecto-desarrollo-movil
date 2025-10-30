@@ -26,7 +26,6 @@ fun RegisterScreen(onRegisterDone: () -> Unit) {
     var email by remember { mutableStateOf(TextFieldValue("")) }
     var showWelcome by remember { mutableStateOf(false) }
 
-    // ⚠️ Variables para manejar errores
     var nameError by remember { mutableStateOf<String?>(null) }
     var emailError by remember { mutableStateOf<String?>(null) }
 
@@ -41,12 +40,11 @@ fun RegisterScreen(onRegisterDone: () -> Unit) {
             Text("Registro de Usuario", style = MaterialTheme.typography.headlineMedium)
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 🧾 Campo nombre completo con validación
             OutlinedTextField(
                 value = name,
                 onValueChange = {
                     name = it
-                    nameError = null // limpiar error al escribir
+                    nameError = null 
                 },
                 label = { Text("Nombre completo") },
                 isError = nameError != null,
@@ -58,12 +56,12 @@ fun RegisterScreen(onRegisterDone: () -> Unit) {
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // ✉️ Campo correo electrónico con validación
+            //correo electrónico 
             OutlinedTextField(
                 value = email,
                 onValueChange = {
                     email = it
-                    emailError = null // limpiar error al escribir
+                    emailError = null 
                 },
                 label = { Text("Correo electrónico") },
                 isError = emailError != null,
@@ -75,7 +73,7 @@ fun RegisterScreen(onRegisterDone: () -> Unit) {
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // 🔘 Botón registrar
+            //registrar
             Button(
                 onClick = {
                     scope.launch {
@@ -106,7 +104,6 @@ fun RegisterScreen(onRegisterDone: () -> Unit) {
             }
         }
 
-        // 🎉 Animación de bienvenida
         AnimatedVisibility(
             visible = showWelcome,
             enter = fadeIn(),
