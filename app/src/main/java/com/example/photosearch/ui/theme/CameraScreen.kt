@@ -27,7 +27,7 @@ import java.io.File
 fun CameraScreen(
     onCapture: (String, String) -> Unit,
     onPickImage: () -> Unit,
-    onBack: () -> Unit // ✅ Nuevo parámetro para volver atrás
+    onBack: () -> Unit 
 ) {
     val context = LocalContext.current
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
@@ -43,7 +43,7 @@ fun CameraScreen(
             .build()
         val objectDetector = ObjectDetection.getClient(options)
 
-        // ✅ Vista previa de la cámara
+        //Vista previa de la cámara
         AndroidView(
             factory = { ctx ->
                 val previewView = PreviewView(ctx).apply {
@@ -79,7 +79,6 @@ fun CameraScreen(
             modifier = Modifier.fillMaxSize()
         )
 
-        // 🔹 Fila inferior con los dos botones
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -87,7 +86,6 @@ fun CameraScreen(
                 .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            // 🔙 Botón para volver atrás
             FloatingActionButton(
                 onClick = { onBack() },
                 containerColor = MaterialTheme.colorScheme.secondary
@@ -95,7 +93,6 @@ fun CameraScreen(
                 Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
             }
 
-            // 📸 Botón para tomar la foto
             FloatingActionButton(
                 onClick = {
                     try {
