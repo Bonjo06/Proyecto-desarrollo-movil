@@ -6,14 +6,14 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [PhotoEntity::class, UserEntity::class], // Agregamos UserEntity
+    entities = [PhotoEntity::class, UserEntity::class], 
     version = 2,
     exportSchema = false
 )
 abstract class PhotoDatabase : RoomDatabase() {
 
     abstract fun photoDao(): PhotoDao
-    abstract fun userDao(): UserDao // Nuevo DAO para usuarios
+    abstract fun userDao(): UserDao 
 
     companion object {
         @Volatile
@@ -26,7 +26,7 @@ abstract class PhotoDatabase : RoomDatabase() {
                     PhotoDatabase::class.java,
                     "photo_db"
                 )
-                    .fallbackToDestructiveMigration() // Evita crashes en migración
+                    .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
                 instance
