@@ -96,7 +96,7 @@ fun RegisterScreen(onRegisterDone: () -> Unit) {
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // CONTRASEÑA (NUEVO)
+            // CONTRASEÑA
             OutlinedTextField(
                 value = password,
                 onValueChange = {
@@ -134,7 +134,7 @@ fun RegisterScreen(onRegisterDone: () -> Unit) {
                                 userRepo.registerUser(
                                     name.text,
                                     email.text,
-                                    password.text  // <-- Guardando contraseña real
+                                    password.text
                                 )
 
                                 Toast.makeText(
@@ -159,18 +159,18 @@ fun RegisterScreen(onRegisterDone: () -> Unit) {
             }
         }
 
-        // MENSAJE DE BIENVENIDA
+        // MENSAJE DE REDIRECCIÓN (CORREGIDO)
         AnimatedVisibility(
             visible = showWelcome,
             enter = fadeIn(),
             exit = fadeOut()
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("🎉 Bienvenido, ${name.text} 👋",
+                Text("🎉 Registro Exitoso",
                     style = MaterialTheme.typography.headlineMedium
                 )
                 Spacer(modifier = Modifier.height(10.dp))
-                Text("Preparando tu experiencia...",
+                Text("Redirigiendo al inicio de sesión...",
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
