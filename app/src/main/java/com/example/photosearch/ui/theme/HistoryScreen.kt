@@ -7,18 +7,37 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
 import coil.compose.AsyncImage
 import com.example.photosearch.data.PhotoEntity
+import com.example.photosearch.repository.PhotoRepository
+import com.example.photosearch.api.PhotoResponse
 import androidx.core.net.toUri
 
 @Composable
 fun HistoryScreen(photoList: List<PhotoEntity>, onBack: () -> Unit) {
     val context = LocalContext.current
+    val repo = remember { PhotoRepository(context) }
+
+    // 🔥 Fotos desde el backend
+    var apiPhotos by remember { mutableStateOf<List<PhotoResponse>>(emptyList()) }
+
+    // Cargar fotos del backend cuando se abre la pantalla
+    LaunchedEffect(true) {
+        apiPhotos = repo.getPhotosFromApi()
+    }
+
+    // 🔥 Combinar Room + Backend
+    val allPhotos = remember(photoList, apiPhotos) {
+        val localConverted = photoList.map {
+            PhotoResponse(it.label, it.address, it.imagePath)
+        }
+        localConverted + apiPhotos
+    }
 
     Column(
         modifier = Modifier
@@ -37,7 +56,7 @@ fun HistoryScreen(photoList: List<PhotoEntity>, onBack: () -> Unit) {
         Spacer(modifier = Modifier.height(20.dp))
 
         LazyColumn {
-            items(photoList) { photo ->
+            items(allPhotos) { photo ->
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -60,9 +79,10 @@ fun HistoryScreen(photoList: List<PhotoEntity>, onBack: () -> Unit) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(photo.label, style = MaterialTheme.typography.titleMedium)
                         Text("Dirección: ${photo.address}", style = MaterialTheme.typography.bodyMedium)
-                        Text("Fecha: ${photo.date}", style = MaterialTheme.typography.bodySmall)
+
                         Spacer(modifier = Modifier.height(8.dp))
 
+                        // Botón Google Maps
                         Button(
                             onClick = {
                                 try {

@@ -6,14 +6,14 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [PhotoEntity::class, UserEntity::class], 
+    entities = [PhotoEntity::class, UserEntity::class],
     version = 2,
     exportSchema = false
 )
 abstract class PhotoDatabase : RoomDatabase() {
 
     abstract fun photoDao(): PhotoDao
-    abstract fun userDao(): UserDao 
+    abstract fun userDao(): UserDao
 
     companion object {
         @Volatile

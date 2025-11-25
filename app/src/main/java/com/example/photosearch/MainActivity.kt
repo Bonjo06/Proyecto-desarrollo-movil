@@ -7,8 +7,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.example.photosearch.repository.UserRepository
@@ -43,7 +46,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        //permisos
+        // Permisos
         requestPermissionsLauncher.launch(
             arrayOf(
                 Manifest.permission.CAMERA,
@@ -60,30 +63,50 @@ class MainActivity : ComponentActivity() {
                 var currentScreen by remember { mutableStateOf<String?>(null) }
                 var loggedUser by remember { mutableStateOf<com.example.photosearch.data.UserEntity?>(null) }
 
-                //verificacion si hay usuario
+                // Verificación inicial de usuario
                 LaunchedEffect(Unit) {
                     val existingUser = userRepository.getUser()
                     loggedUser = existingUser
-                    currentScreen = if (existingUser == null) "register" else "home"
+                    // CAMBIO AQUÍ: Si no hay usuario, vamos a LOGIN primero
+                    currentScreen = if (existingUser == null) "login" else "home"
                 }
 
-                //navegacion
+                // Navegación
                 if (currentScreen == null) {
-                    Surface(modifier = Modifier, color = MaterialTheme.colorScheme.background) {
-                        Text("Cargando...")
+                    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                        Box(contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
                     }
                 } else {
-                    Surface(modifier = Modifier, color = MaterialTheme.colorScheme.background) {
+                    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                         when (currentScreen) {
+
+                            // --- NUEVA PANTALLA: LOGIN ---
+                            "login" -> {
+                                LoginScreen(
+                                    onLoginSuccess = { user ->
+                                        loggedUser = user
+                                        currentScreen = "home"
+                                    },
+                                    onNavigateToRegister = {
+                                        currentScreen = "register"
+                                    }
+                                )
+                            }
+
+                            // --- PANTALLA: REGISTRO ---
                             "register" -> RegisterScreen(
                                 onRegisterDone = {
-                                    Toast.makeText(context, "Usuario registrado ✅", Toast.LENGTH_SHORT).show()
+                                    // Al registrarse exitosamente, entramos al home
                                     coroutineScope.launch {
                                         loggedUser = userRepository.getUser()
                                         currentScreen = "home"
                                     }
                                 }
                             )
+
+                            // --- PANTALLA: HOME ---
                             "home" -> loggedUser?.let { user ->
                                 HomeScreen(
                                     user = user,
@@ -92,14 +115,16 @@ class MainActivity : ComponentActivity() {
                                     onLogout = {
                                         coroutineScope.launch {
                                             context.deleteDatabase("photo_db")
-                                            Toast.makeText(context, "Sesión cerrada ✅", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, "Sesión cerrada", Toast.LENGTH_SHORT).show()
                                             loggedUser = null
-                                            currentScreen = "register"
+                                            // Al salir, volvemos al LOGIN
+                                            currentScreen = "login"
                                         }
                                     }
                                 )
                             }
-                            //camara
+
+                            // --- PANTALLA: CÁMARA ---
                             "camera" -> CameraScreen(
                                 onCapture = { detectedLabel, imagePath ->
                                     mainViewModel.onPhotoButtonPressed(detectedLabel, imagePath)
@@ -109,10 +134,10 @@ class MainActivity : ComponentActivity() {
                                 onPickImage = {
                                     pickImageLauncher.launch("image/*")
                                 },
-                                onBack = { currentScreen = "home" } 
+                                onBack = { currentScreen = "home" }
                             )
 
-                            //historial fotos
+                            // --- PANTALLA: HISTORIAL ---
                             "history" -> HistoryScreen(
                                 photoList = mainViewModel.photoList.collectAsState().value,
                                 onBack = { currentScreen = "home" }

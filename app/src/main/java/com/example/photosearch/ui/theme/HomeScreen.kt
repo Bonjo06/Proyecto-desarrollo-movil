@@ -19,7 +19,7 @@ import com.example.photosearch.data.UserEntity
 fun HomeScreen(
     user: UserEntity,
     onOpenCamera: () -> Unit,
-    onOpenHistory: () -> Unit,  
+    onOpenHistory: () -> Unit,
     onLogout: () -> Unit
 ) {
     val context = LocalContext.current
@@ -76,7 +76,7 @@ fun HomeScreen(
                         "Abriendo historial de detecciones 📸",
                         Toast.LENGTH_SHORT
                     ).show()
-                    onOpenHistory() 
+                    onOpenHistory()
                 },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)

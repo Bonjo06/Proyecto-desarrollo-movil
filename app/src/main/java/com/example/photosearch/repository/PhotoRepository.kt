@@ -5,6 +5,8 @@ import android.content.Context
 import android.location.Geocoder
 import android.os.Build
 import android.util.Log
+import com.example.photosearch.api.PhotoRequest
+import com.example.photosearch.api.RetrofitInstance
 import com.example.photosearch.data.PhotoDatabase
 import com.example.photosearch.data.PhotoEntity
 import kotlinx.coroutines.Dispatchers
@@ -15,10 +17,12 @@ import java.util.Date
 import java.util.Locale
 import kotlin.coroutines.resume
 
-
-class PhotoRepository(private val context: Context) {
-
-    private val photoDao = PhotoDatabase.getDatabase(context).photoDao()
+@Suppress("DEPRECATION")
+class PhotoRepository(
+    private val context: Context,
+    private val photoDao: com.example.photosearch.data.PhotoDao =
+        PhotoDatabase.getDatabase(context).photoDao()
+) {
 
     @SuppressLint("MissingPermission")
     suspend fun getCurrentAddress(): String = withContext(Dispatchers.IO) {
@@ -66,5 +70,26 @@ class PhotoRepository(private val context: Context) {
 
     suspend fun getAllPhotos(): List<PhotoEntity> = withContext(Dispatchers.IO) {
         photoDao.getAll()
+    }
+
+    suspend fun sendPhotoToApi(label: String, address: String, imagePath: String) {
+        withContext(Dispatchers.IO) {
+            try {
+                val request = PhotoRequest(label, address, imagePath)
+                RetrofitInstance.api.sendPhoto(request)
+                Log.d("PhotoRepository", "Foto enviada correctamente al backend")
+            } catch (e: Exception) {
+                Log.e("PhotoRepository", "Error enviando foto a la API: ${e.message}")
+            }
+        }
+    }
+
+    suspend fun getPhotosFromApi(): List<com.example.photosearch.api.PhotoResponse> {
+        return try {
+            RetrofitInstance.api.getPhotos()
+        } catch (e: Exception) {
+            Log.e("PhotoRepository", "Error obteniendo fotos del backend: ${e.message}")
+            emptyList()
+        }
     }
 }
