@@ -67,7 +67,7 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(Unit) {
                     val existingUser = userRepository.getUser()
                     loggedUser = existingUser
-                    // CAMBIO AQUÍ: Si no hay usuario, vamos a LOGIN primero
+                    // Si no hay usuario logueado, vamos al login
                     currentScreen = if (existingUser == null) "login" else "home"
                 }
 
@@ -82,7 +82,7 @@ class MainActivity : ComponentActivity() {
                     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                         when (currentScreen) {
 
-                            // --- NUEVA PANTALLA: LOGIN ---
+                            // --- PANTALLA: LOGIN ---
                             "login" -> {
                                 LoginScreen(
                                     onLoginSuccess = { user ->
@@ -95,14 +95,11 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            // --- PANTALLA: REGISTRO ---
+                            // --- PANTALLA: REGISTRO (CORREGIDA) ---
                             "register" -> RegisterScreen(
                                 onRegisterDone = {
-                                    // Al registrarse exitosamente, entramos al home
-                                    coroutineScope.launch {
-                                        loggedUser = userRepository.getUser()
-                                        currentScreen = "home"
-                                    }
+                                    // CAMBIO: Al terminar el registro, redirigimos al Login
+                                    currentScreen = "login"
                                 }
                             )
 
@@ -114,9 +111,12 @@ class MainActivity : ComponentActivity() {
                                     onOpenHistory = { currentScreen = "history" },
                                     onLogout = {
                                         coroutineScope.launch {
-                                            context.deleteDatabase("photo_db")
-                                            Toast.makeText(context, "Sesión cerrada", Toast.LENGTH_SHORT).show()
+                                            // Borrar DB o solo sesión según tu lógica
+                                            // context.deleteDatabase("photo_db") // Opcional: limpiar todo
+
                                             loggedUser = null
+                                            Toast.makeText(context, "Sesión cerrada", Toast.LENGTH_SHORT).show()
+
                                             // Al salir, volvemos al LOGIN
                                             currentScreen = "login"
                                         }
