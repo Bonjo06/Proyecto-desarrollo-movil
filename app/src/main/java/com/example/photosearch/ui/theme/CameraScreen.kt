@@ -18,16 +18,20 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import com.example.photosearch.repository.PhotoRepository
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.objects.ObjectDetection
 import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.File
 
 @Composable
 fun CameraScreen(
     onCapture: (String, String) -> Unit,
     onPickImage: () -> Unit,
-    onBack: () -> Unit // ✅ Nuevo parámetro para volver atrás
+    onBack: () -> Unit
 ) {
     val context = LocalContext.current
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
@@ -43,7 +47,7 @@ fun CameraScreen(
             .build()
         val objectDetector = ObjectDetection.getClient(options)
 
-        // ✅ Vista previa de la cámara
+        // Vista previa de la cámara
         AndroidView(
             factory = { ctx ->
                 val previewView = PreviewView(ctx).apply {
@@ -79,7 +83,6 @@ fun CameraScreen(
             modifier = Modifier.fillMaxSize()
         )
 
-        // 🔹 Fila inferior con los dos botones
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -87,7 +90,8 @@ fun CameraScreen(
                 .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            // 🔙 Botón para volver atrás
+
+            // Botón Volver
             FloatingActionButton(
                 onClick = { onBack() },
                 containerColor = MaterialTheme.colorScheme.secondary
@@ -95,7 +99,7 @@ fun CameraScreen(
                 Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
             }
 
-            // 📸 Botón para tomar la foto
+            // Botón Capturar Foto
             FloatingActionButton(
                 onClick = {
                     try {
@@ -121,7 +125,24 @@ fun CameraScreen(
 
                                     objectDetector.process(image)
                                         .addOnSuccessListener {
+                                            // Mostrar en la app
                                             onCapture("Objeto detectado", imagePath)
+
+                                            // 🔥 ENVIAR AL BACKEND
+                                            CoroutineScope(Dispatchers.IO).launch {
+                                                try {
+                                                    val repo = PhotoRepository(context)
+                                                    val address = repo.getCurrentAddress()
+                                                    repo.sendPhotoToApi(
+                                                        "Objeto detectado",
+                                                        address,
+                                                        imagePath
+                                                    )
+                                                    Log.d("API", "Foto enviada correctamente al backend")
+                                                } catch (ex: Exception) {
+                                                    Log.e("API", "Error enviando foto a la API: ${ex.message}")
+                                                }
+                                            }
                                         }
                                         .addOnFailureListener { e ->
                                             Log.e("MLKit", "Error en detección: ${e.message}")
