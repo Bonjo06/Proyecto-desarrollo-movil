@@ -1,108 +1,112 @@
-# 📸 PhotoSearch – Proyecto de Desarrollo Móvil
+Aquí tienes el informe **actualizado** incorporando los detalles técnicos del Backend (Spring Boot, Laragon, VS Code) y la configuración de la API que mencionaste.
+
+Puedes copiar y pegar este contenido directamente en tu archivo `README.md`.
+
+-----
+
+# 📸 PhotoSearch – Informe Técnico de Entrega
 
 ## 🧩 Descripción del Proyecto
-**PhotoSearch** es una aplicación móvil desarrollada en **Kotlin con Jetpack Compose (Material 3)**.  
-Permite **capturar imágenes con la cámara**, **detectar objetos automáticamente usando ML Kit**, y **guardar los datos en una base de datos local (Room)** junto con la **ubicación GPS del usuario**.  
 
-El sistema cuenta con un flujo completo de registro, almacenamiento local, historial de detecciones, y una interfaz moderna adaptada al diseño **Material Design 3**.
+**PhotoSearch** es una solución integral compuesta por una **aplicación móvil (Android)** y un **backend (API REST)**.
 
----
+La aplicación móvil, desarrollada en **Kotlin con Jetpack Compose (Material 3)**, permite **capturar imágenes**, **detectar objetos con ML Kit** y guardar un historial local. Estos datos se sincronizan con un servicio web externo (API) para centralizar la información.
+
+-----
 
 ## 👥 Integrantes del Proyecto
+
 | Nombre | Rol |
 |--------|------|
-| **Bryan Saavedra** | Desarrollador principal / Integración de cámara, Room y ML Kit |
-| **Benjamín Mella** | Soporte de UI / Validación y navegación |
+| **Bryan Saavedra** | Backend (Spring Boot/Laragon) e Integración Retrofit |
+| **Benjamín Mella** | Frontend (UI/UX), Cámara y Validaciones |
 
----
+-----
 
-## ⚙️ Tecnologías Utilizadas
-- **Lenguaje:Kotlin  
-- **Framework: Jetpack Compose (Material 3)  
-- **Arquitectura: MVVM (Model-View-ViewModel)  
-- **Base de datos local:Room  
-- **Reconocimiento de objetos: Google ML Kit  
-- **Cámara:** CameraX API  
-- **Ubicación:** Fused Location Provider (GPS)  
-- **Gestión de estado:** ViewModel + StateFlow  
-- **IDE:** Android Studio
+## ⚙️ Stack Tecnológico
 
----
+### 📱 Aplicación Móvil
+
+  - **Lenguaje:** Kotlin
+  - **Framework:** Jetpack Compose (Material 3)
+  - **Arquitectura:** MVVM (Model-View-ViewModel)
+  - **Base de Datos Local:** Room (SQLite)
+  - **IA / ML:** Google ML Kit (Object Detection)
+  - **Cámara:** CameraX API
+  - **Ubicación:** Fused Location Provider (GPS)
+  - **IDE:** Android Studio Ladybug/Koala
+
+### ☁️ Backend (API REST)
+
+  - **Framework:** Spring Boot (Java)
+  - **IDE:** Visual Studio Code
+  - **Base de Datos:** MySQL / MariaDB (Gestionada con **Laragon**)
+  - **URL Base:** `http://localhost:8080/api/photos`
+
+-----
 
 ## 🧠 Funcionalidades Implementadas
 
 | Funcionalidad | Descripción |
 |----------------|-------------|
-| 🧾 **Registro validado** | Verifica que el usuario ingrese nombre y apellido, y un correo válido (`@gmail.com` o `@duocuc.cl`). |
-| 🏠 **Pantalla principal (Home)** | Permite acceder a la cámara o al historial. |
-| 📷 **Captura de fotos (CameraX)** | Usa la cámara nativa del dispositivo para tomar fotos. |
-| 🤖 **Detección de objetos (ML Kit)** | Identifica objetos automáticamente en la imagen capturada. |
-| 🌍 **Ubicación GPS** | Registra la dirección física donde se tomó la foto. |
-| 🖼️ **Historial de detecciones** | Muestra las fotos guardadas, con su dirección, fecha y descripción. |
-| 💾 **Base de datos local (Room)** | Guarda usuarios y fotos en una base SQLite local. |
-| ✨ **Diseño moderno (Material 3)** | Interfaz visual limpia, adaptada a temas claros y oscuros. |
-| 🔙 **Botón de volver** | Permite regresar fácilmente desde la cámara a la pantalla principal. |
+| 🧾 **Registro validado** | Validación de correo (`@gmail.com`, `@duocuc.cl`) y campos obligatorios. |
+| 📷 **Captura Inteligente** | Uso de CameraX para tomar fotos y ML Kit para detectar qué objeto es. |
+| 🌍 **Geolocalización** | Obtiene la dirección física (calle/ciudad) mediante GPS al momento de la foto. |
+| 💾 **Persistencia Híbrida** | Guarda en **Room (local)** para acceso offline y sincroniza con **Spring Boot (remoto)**. |
+| 🔌 **Consumo de API** | Envío de datos (POST) y consulta de historial (GET) al servidor local. |
+| 🖼️ **Historial Unificado** | Muestra detecciones locales y las traídas desde el servidor. |
 
----
----
+-----
 
 ## 🚀 Pasos para Ejecutar el Proyecto
 
-### 1️⃣ Clonar el repositorio
-```bash
-git clone https://github.com/bryansaavedra25/proyecto-desarrollo-movil.git
-Abrir en Android Studio
+### 1️⃣ Configurar el Backend (API Spring Boot)
 
-Abre Android Studio.
+Para que la aplicación pueda enviar datos, el servidor debe estar corriendo.
 
-Selecciona “Open an existing project”.
+1.  Abre **Laragon** e inicia los servicios (Botón "Iniciar Todo") para levantar la Base de Datos MySQL.
+2.  Abre la carpeta del proyecto backend en **Visual Studio Code**.
+3.  Ejecuta el proyecto Spring Boot.
+4.  Verifica que la API responde en:
+      * `http://localhost:8080/api/photos`
 
-Elige la carpeta del proyecto clonado.
+### 2️⃣ Ejecutar la Aplicación Móvil
 
-3️⃣ Configurar SDK y librerías
+1.  Clona el repositorio y abre la carpeta `app` en **Android Studio**.
+2.  Espera a que Gradle sincronice las dependencias.
+3.  Verifica la conexión a la API en `RetrofitInstance.kt`:
+      * *Nota:* Para el emulador Android, `localhost` se mapea como `10.0.2.2`.
+      * La URL configurada debe ser: `http://10.0.2.2:8080/`
+4.  Conecta tu dispositivo o inicia el emulador.
+5.  Haz clic en **Run ▶️**.
 
-Asegúrate de tener Android SDK 33 o superior.
+### 3️⃣ Permisos Necesarios
 
-Verifica en:
-File → Project Structure → SDK Location
+Al iniciar, la app solicitará:
 
-Si faltan dependencias, ejecuta:
+  * 📷 **Cámara:** Para capturar imágenes.
+  * 📍 **Ubicación:** Para registrar dónde se detectó el objeto.
 
-gradlew build
+-----
 
-4️⃣ Ejecutar la aplicación
+## 🧭 Estructura del Proyecto (App)
 
-Conecta tu dispositivo físico o usa un emulador Pixel (API 33 o superior).
-
-Haz clic en Run ▶️ para compilar y ejecutar la app.
-
-5️⃣ Conceder permisos
-
-La aplicación solicita los siguientes permisos al iniciar:
-
-📷 Cámara
-
-📍 Ubicación (GPS)
-
-Asegúrate de aceptarlos para el correcto funcionamiento.
-
-🧭 Estructura del Proyecto
+```text
 app/
  ├─ src/main/java/com/example/photosearch/
- │   ├─ data/          → Entidades, DAO y Base de datos Room
- │   ├─ repository/    → Lógica de datos y control de almacenamiento
- │   ├─ ui/theme/      → Pantallas Compose (Home, Register, Camera, History)
- │   ├─ viewmodel/     → Lógica de negocio y flujo de estado
- │   └─ MainActivity.kt → Navegación principal
- ├─ res/
- │   ├─ drawable/      → Iconos y recursos gráficos
- │   ├─ values/        → Temas, colores y tipografías
- └─ build.gradle
+ │   ├─ api/           → Interfaces Retrofit y Modelos de API
+ │   ├─ data/          → Entidades Room (User, Photo) y DAOs
+ │   ├─ repository/    → Repositorio único (Maneja Room + API)
+ │   ├─ ui/theme/      → Pantallas (Login, Camera, History)
+ │   ├─ viewmodel/     → MainViewModel (Lógica de negocio)
+ │   └─ MainActivity.kt
+ └─ build.gradle.kts   → Configuración y Firmado (SigningConfigs)
+```
 
-🏫 Información Académica
+-----
 
-Institución: Duoc UC – Escuela de Informática y Telecomunicaciones
+## 🏫 Información Académica
 
-Asignatura: Desarrollo de Aplicaciones Móviles
-
-Sección: 003D
+  * **Institución:** Duoc UC – Escuela de Informática y Telecomunicaciones
+  * **Asignatura:** Desarrollo de Aplicaciones Móviles (DSY1105)
+  * **Sección:** 003D
