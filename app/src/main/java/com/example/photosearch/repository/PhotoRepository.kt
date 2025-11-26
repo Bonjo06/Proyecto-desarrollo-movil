@@ -27,10 +27,8 @@ class PhotoRepository(
     @SuppressLint("MissingPermission")
     suspend fun getCurrentAddress(): String = withContext(Dispatchers.IO) {
         try {
-            // --- CAMBIO AQUÍ: Usamos la nueva función del Helper ---
             val location = LocationHelper.getCurrentLocation(context)
                 ?: return@withContext "No se pudo obtener la ubicación actual."
-            // ------------------------------------------------------
 
             val geocoder = Geocoder(context, Locale.getDefault())
 
@@ -92,6 +90,31 @@ class PhotoRepository(
         } catch (e: Exception) {
             Log.e("PhotoRepository", "Error obteniendo fotos del backend: ${e.message}")
             emptyList()
+        }
+    }
+
+    // 👇 1. FUNCIÓN NUEVA: ACTUALIZAR (PUT)
+    suspend fun updatePhotoRemote(id: Int, label: String, address: String, imagePath: String) {
+        withContext(Dispatchers.IO) {
+            try {
+                val request = PhotoRequest(label, address, imagePath)
+                RetrofitInstance.api.updatePhoto(id, request)
+                Log.d("API", "Foto actualizada (ID: $id) correctamente")
+            } catch (e: Exception) {
+                Log.e("API", "Error al actualizar: ${e.message}")
+            }
+        }
+    }
+
+    // 👇 2. FUNCIÓN NUEVA: BORRAR (DELETE)
+    suspend fun deletePhotoRemote(id: Int) {
+        withContext(Dispatchers.IO) {
+            try {
+                RetrofitInstance.api.deletePhoto(id)
+                Log.d("API", "Foto eliminada (ID: $id) correctamente")
+            } catch (e: Exception) {
+                Log.e("API", "Error al eliminar: ${e.message}")
+            }
         }
     }
 }

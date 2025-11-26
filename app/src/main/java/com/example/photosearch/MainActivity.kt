@@ -21,6 +21,7 @@ import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
+    // Instancia del ViewModel que maneja toda la lógica
     private val mainViewModel: MainViewModel by viewModels()
 
     private val requestPermissionsLauncher =
@@ -95,10 +96,9 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            // --- PANTALLA: REGISTRO (CORREGIDA) ---
+                            // --- PANTALLA: REGISTRO ---
                             "register" -> RegisterScreen(
                                 onRegisterDone = {
-                                    // CAMBIO: Al terminar el registro, redirigimos al Login
                                     currentScreen = "login"
                                 }
                             )
@@ -111,13 +111,8 @@ class MainActivity : ComponentActivity() {
                                     onOpenHistory = { currentScreen = "history" },
                                     onLogout = {
                                         coroutineScope.launch {
-                                            // Borrar DB o solo sesión según tu lógica
-                                            // context.deleteDatabase("photo_db") // Opcional: limpiar todo
-
                                             loggedUser = null
                                             Toast.makeText(context, "Sesión cerrada", Toast.LENGTH_SHORT).show()
-
-                                            // Al salir, volvemos al LOGIN
                                             currentScreen = "login"
                                         }
                                     }
@@ -137,10 +132,11 @@ class MainActivity : ComponentActivity() {
                                 onBack = { currentScreen = "home" }
                             )
 
-                            // --- PANTALLA: HISTORIAL ---
+                            // --- PANTALLA: HISTORIAL (CORREGIDA) ---
                             "history" -> HistoryScreen(
                                 photoList = mainViewModel.photoList.collectAsState().value,
-                                onBack = { currentScreen = "home" }
+                                onBack = { currentScreen = "home" },
+                                viewModel = mainViewModel // 👈 ¡ESTO FALTABA!
                             )
                         }
                     }
