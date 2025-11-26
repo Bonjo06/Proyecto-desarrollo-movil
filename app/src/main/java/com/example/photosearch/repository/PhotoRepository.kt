@@ -27,8 +27,10 @@ class PhotoRepository(
     @SuppressLint("MissingPermission")
     suspend fun getCurrentAddress(): String = withContext(Dispatchers.IO) {
         try {
-            val location = LocationHelper.getLastKnownLocation(context)
+            // --- CAMBIO AQUÍ: Usamos la nueva función del Helper ---
+            val location = LocationHelper.getCurrentLocation(context)
                 ?: return@withContext "No se pudo obtener la ubicación actual."
+            // ------------------------------------------------------
 
             val geocoder = Geocoder(context, Locale.getDefault())
 
