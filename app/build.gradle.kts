@@ -2,7 +2,6 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-
     id("kotlin-kapt")
 }
 
@@ -16,8 +15,18 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    // 👇 1. AGREGA ESTE BLOQUE AQUÍ (Configuración de la firma)
+    signingConfigs {
+        create("release") {
+            // El nombre debe ser EXACTO al archivo que creaste
+            storeFile = file("photosearch-key.jks")
+            storePassword = "photosearch2005"  // 👈 REEMPLAZA con tu contraseña real
+            keyAlias = "key0"
+            keyPassword = "photosearch2005"    // 👈 REEMPLAZA con tu contraseña real
+        }
     }
 
     buildTypes {
@@ -27,6 +36,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // 👇 2. AGREGA ESTA LÍNEA PARA ACTIVAR LA FIRMA
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
@@ -43,6 +54,8 @@ android {
         compose = true
     }
 }
+
+// ... el resto de tu archivo sigue igual ...
 
 // 👇 ESTA ES LA PARTE CORRECTA PARA JUNIT 5
 tasks.withType<Test> {
